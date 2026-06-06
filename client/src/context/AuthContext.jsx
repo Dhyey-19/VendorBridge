@@ -143,6 +143,27 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Accept team invitation and sign in
+  const acceptTeamInvitation = async (inviteToken) => {
+    try {
+      const res = await fetch('/api/auth/accept-invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: inviteToken })
+      });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.message || 'Invitation acceptance failed');
+
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
+      setUser(data);
+      return { success: true, user: data };
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  };
+
   // Clear session
   const logout = () => {
     localStorage.removeItem('token');
@@ -151,7 +172,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, sendOtp, login, loginOtp, registerCompany, registerVendor, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, sendOtp, login, loginOtp, registerCompany, registerVendor, acceptTeamInvitation, logout }}>
       {children}
     </AuthContext.Provider>
   );

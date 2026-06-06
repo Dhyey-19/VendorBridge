@@ -1,4 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   Users, 
@@ -11,20 +12,24 @@ import {
   History, 
   BarChart3,
   LogOut,
-  Bell
+  Bell,
+  UserCog
 } from 'lucide-react';
 import './Layout.css';
 
 function Layout() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
 
   const handleLogout = () => {
+    logout();
     navigate('/company/auth');
   };
 
   const navItems = [
     { path: '/company/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/company/vendors', label: 'Vendors', icon: Users },
+    { path: '/company/team', label: 'Team Management', icon: UserCog },
     { path: '/company/rfqs', label: 'RFQs', icon: FileQuestion },
     { path: '/company/quotations', label: 'Quotations', icon: FileText },
     { path: '/company/approvals', label: 'Approvals', icon: CheckSquare },
@@ -33,6 +38,24 @@ function Layout() {
     { path: '/company/logs', label: 'Activity Logs', icon: History },
     { path: '/company/reports', label: 'Reports', icon: BarChart3 },
   ];
+
+  const getInitials = (name) => {
+    if (!name) return 'VB';
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].substring(0, 2).toUpperCase();
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'admin': return 'Administrator';
+      case 'manager': return 'Manager';
+      case 'officer': return 'Procurement Officer';
+      default: return 'Staff';
+    }
+  };
 
   return (
     <div className="layout-container">
@@ -74,10 +97,10 @@ function Layout() {
               <span className="badge-indicator"></span>
             </button>
             <div className="user-profile">
-              <div className="avatar">PO</div>
+              <div className="avatar">{getInitials(user?.name)}</div>
               <div className="user-info">
-                <span className="user-name">John Doe</span>
-                <span className="user-role">Procurement Officer</span>
+                <span className="user-name">{user?.name || 'Enterprise Operator'}</span>
+                <span className="user-role">{getRoleLabel(user?.role)}</span>
               </div>
             </div>
           </div>

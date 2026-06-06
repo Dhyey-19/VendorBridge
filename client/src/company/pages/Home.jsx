@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { Building2, Plus, DollarSign, Users, Briefcase, FileText, CheckCircle, XCircle, ShieldCheck, UserPlus } from 'lucide-react';
+import { Building2, Plus, DollarSign, Users, Briefcase, FileText, CheckCircle, XCircle, ShieldCheck } from 'lucide-react';
 
 const CompanyHome = () => {
   const { user } = useAuth();
@@ -26,16 +26,10 @@ const CompanyHome = () => {
     { id: 303, name: 'Gopal Logistics Services', category: 'Transportation & Logistics', gst: 'GSTIN54321VENDOR', status: 'Pending' }
   ]);
 
-  const [staffUsers, setStaffUsers] = useState([
-    { id: 401, name: 'John Admin', email: 'admin@apex.com', role: 'admin', status: 'active' },
-    { id: 402, name: 'Sarah Approver', email: 'approver@apex.com', role: 'manager', status: 'active' },
-    { id: 403, name: 'Gopal Officer', email: 'officer@apex.com', role: 'officer', status: 'active' }
-  ]);
-
   // Tab selections depend on role
   // officer: 'rfps' | 'incoming-bids'
   // manager: 'incoming-bids' | 'rfps'
-  // admin: 'vendors' | 'staff'
+  // admin: 'vendors'
   const defaultTab = userRole === 'admin' ? 'vendors' : userRole === 'manager' ? 'incoming-bids' : 'rfps';
   const [activeTab, setActiveTab] = useState(defaultTab);
 
@@ -43,11 +37,6 @@ const CompanyHome = () => {
   const [rfpTitle, setRfpTitle] = useState('');
   const [rfpBudget, setRfpBudget] = useState('');
   const [rfpDesc, setRfpDesc] = useState('');
-  
-  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
-  const [staffName, setStaffName] = useState('');
-  const [staffEmail, setStaffEmail] = useState('');
-  const [staffRoleSelect, setStaffRoleSelect] = useState('officer');
 
   const [notification, setNotification] = useState('');
 
@@ -76,23 +65,7 @@ const CompanyHome = () => {
     setTimeout(() => setNotification(''), 4000);
   };
 
-  const handleCreateStaff = (e) => {
-    e.preventDefault();
-    if (!staffName || !staffEmail) return;
 
-    const newStaff = {
-      id: Date.now(),
-      name: staffName,
-      email: staffEmail,
-      role: staffRoleSelect,
-      status: 'active'
-    };
-
-    setStaffUsers([...staffUsers, newStaff]);
-    setIsStaffModalOpen(false);
-    setNotification(`Successfully added staff member: ${staffName}`);
-    setTimeout(() => setNotification(''), 4000);
-  };
 
   const handleUpdateBidStatus = (bidId, newStatus) => {
     setReceivedBids(receivedBids.map(bid => {
@@ -158,11 +131,7 @@ const CompanyHome = () => {
           </button>
         )}
 
-        {userRole === 'admin' && (
-          <button onClick={() => setIsStaffModalOpen(true)} className="btn btn-company" style={{ display: 'flex', gap: '8px', padding: '12px 24px' }}>
-            <UserPlus size={18} /> Add Staff Account
-          </button>
-        )}
+
       </div>
 
       {/* Metrics Row */}
@@ -299,38 +268,21 @@ const CompanyHome = () => {
           )}
 
           {userRole === 'admin' && (
-            <>
-              <button
-                onClick={() => setActiveTab('vendors')}
-                style={{
-                  padding: '12px 8px',
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  color: activeTab === 'vendors' ? 'var(--accent-company)' : 'var(--text-secondary)',
-                  borderBottom: '2px solid',
-                  borderColor: activeTab === 'vendors' ? 'var(--accent-company)' : 'transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Manage Vendors ({vendors.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('staff')}
-                style={{
-                  padding: '12px 8px',
-                  fontWeight: 600,
-                  fontSize: '15px',
-                  color: activeTab === 'staff' ? 'var(--accent-company)' : 'var(--text-secondary)',
-                  borderBottom: '2px solid',
-                  borderColor: activeTab === 'staff' ? 'var(--accent-company)' : 'transparent',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s'
-                }}
-              >
-                Manage Staff Users ({staffUsers.length})
-              </button>
-            </>
+            <button
+              onClick={() => setActiveTab('vendors')}
+              style={{
+                padding: '12px 8px',
+                fontWeight: 600,
+                fontSize: '15px',
+                color: activeTab === 'vendors' ? 'var(--accent-company)' : 'var(--text-secondary)',
+                borderBottom: '2px solid',
+                borderColor: activeTab === 'vendors' ? 'var(--accent-company)' : 'transparent',
+                cursor: 'pointer',
+                transition: 'all 0.2s'
+              }}
+            >
+              Manage Vendors ({vendors.length})
+            </button>
           )}
         </div>
 
@@ -497,51 +449,7 @@ const CompanyHome = () => {
           </div>
         )}
 
-        {/* Tab 4: Admin Staff List */}
-        {activeTab === 'staff' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {staffUsers.map((staff) => (
-              <div key={staff.id} className="glass-card" style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center',
-                flexWrap: 'wrap',
-                gap: '16px'
-              }}>
-                <div>
-                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '2px' }}>{staff.name}</h4>
-                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{staff.email}</p>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid var(--border-light)',
-                    color: 'var(--text-secondary)'
-                  }}>
-                    {staff.role}
-                  </span>
-                  <span style={{
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    padding: '3px 8px',
-                    borderRadius: '4px',
-                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                    border: '1px solid rgba(16, 185, 129, 0.2)',
-                    color: 'var(--success)'
-                  }}>
-                    {staff.status}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+
 
       </div>
 
@@ -626,83 +534,7 @@ const CompanyHome = () => {
         </div>
       )}
 
-      {/* Add Staff Modal Overlay */}
-      {isStaffModalOpen && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: '100%',
-          backgroundColor: 'rgba(6, 9, 17, 0.8)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 1000
-        }}>
-          <div className="glass-panel" style={{
-            width: '100%',
-            maxWidth: '520px',
-            padding: '32px',
-            borderRadius: '20px',
-            border: '1px solid rgba(16, 185, 129, 0.2)'
-          }}>
-            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>Register Internal Staff User</h3>
-            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
-              Create an operational user account tied to your shared company profile.
-            </p>
-            
-            <form onSubmit={handleCreateStaff}>
-              <div className="form-group">
-                <label className="form-label">Full Name</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  value={staffName}
-                  onChange={(e) => setStaffName(e.target.value)}
-                  placeholder="e.g. Gopal Das"
-                  required
-                />
-              </div>
 
-              <div className="form-group">
-                <label className="form-label">Email Address</label>
-                <input
-                  type="email"
-                  className="form-control"
-                  value={staffEmail}
-                  onChange={(e) => setStaffEmail(e.target.value)}
-                  placeholder="e.g. gopal@apex.com"
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">Role Privilege</label>
-                <select
-                  className="form-control"
-                  value={staffRoleSelect}
-                  onChange={(e) => setStaffRoleSelect(e.target.value)}
-                >
-                  <option value="officer">Procurement Officer (Creates RFQs, Compares Quotes)</option>
-                  <option value="manager">Manager / Approver (Approves Bids)</option>
-                  <option value="admin">System Admin (Full Admin console privilege)</option>
-                </select>
-              </div>
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
-                <button type="button" onClick={() => setIsStaffModalOpen(false)} className="btn btn-outline" style={{ padding: '10px 20px' }}>
-                  Cancel
-                </button>
-                <button type="submit" className="btn btn-company" style={{ padding: '10px 20px' }}>
-                  Add Member
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
     </div>
   );
