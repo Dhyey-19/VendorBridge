@@ -8,8 +8,20 @@ const vendorSchema = new mongoose.Schema({
   },
   logo: String,
   description: String,
-  category: [String],
+  category: {
+    type: [String],
+    default: []
+  },
+  gstNumber: {
+    type: String,
+    trim: true,
+    default: ''
+  },
   website: String,
+  address: {
+    type: String,
+    default: ''
+  },
   complianceScore: {
     type: Number,
     default: 100
@@ -17,6 +29,11 @@ const vendorSchema = new mongoose.Schema({
   rating: {
     type: Number,
     default: 5.0
+  },
+  status: {
+    type: String,
+    enum: ['Pending', 'Approved', 'Rejected'],
+    default: 'Pending'
   },
   contactPerson: {
     name: String,

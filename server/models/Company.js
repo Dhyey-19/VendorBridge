@@ -13,6 +13,15 @@ const companySchema = new mongoose.Schema({
     unique: true,
     sparse: true
   },
+  gstNumber: {
+    type: String,
+    trim: true,
+    default: ''
+  },
+  address: {
+    type: String,
+    default: ''
+  },
   website: String,
   contactPerson: {
     name: String,
