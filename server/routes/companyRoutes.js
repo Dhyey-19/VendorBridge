@@ -1,5 +1,14 @@
 import express from 'express';
-import { getCompanyProfile, updateCompanyProfile, getVendors, updateVendor, deleteVendor } from '../controllers/companyController.js';
+import { 
+  getCompanyProfile, 
+  updateCompanyProfile,
+  getCompanyTeam,
+  addCompanyTeamMember,
+  updateCompanyTeamMember,
+  getVendors,
+  updateVendor,
+  deleteVendor
+} from '../controllers/companyController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
 const router = express.Router();
@@ -17,5 +26,13 @@ router.route('/vendors')
 router.route('/vendors/:id')
   .put(updateVendor)
   .delete(deleteVendor);
+
+// Team management routes
+router.route('/team')
+  .get(getCompanyTeam)
+  .post(authorize('admin'), addCompanyTeamMember);
+
+router.route('/team/:id')
+  .put(authorize('admin'), updateCompanyTeamMember);
 
 export default router;

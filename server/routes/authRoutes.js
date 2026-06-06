@@ -6,7 +6,8 @@ import {
   loginWithOTP,
   sendOTP,
   getUserProfile, 
-  forgotPassword 
+  forgotPassword,
+  acceptInvite
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 
@@ -19,6 +20,7 @@ router.post('/login', loginUser);
 router.post('/login-otp', loginWithOTP);
 router.post('/send-otp', sendOTP);
 router.post('/forgot-password', forgotPassword);
+router.post('/accept-invite', acceptInvite);
 
 // Protected profile pathway
 router.get('/profile', protect, getUserProfile);

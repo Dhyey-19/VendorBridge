@@ -18,6 +18,9 @@ import PurchaseOrders from './company/pages/PurchaseOrders';
 import Invoices from './company/pages/Invoices';
 import ActivityLogs from './company/pages/ActivityLogs';
 import Reports from './company/pages/Reports';
+import TeamManagement from './company/pages/TeamManagement';
+import AcceptInvite from './pages/AcceptInvite';
+
 
 // Route Guard Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -62,6 +65,7 @@ function App() {
           <Route path="/" element={<PortalLayout><LandingPage /></PortalLayout>} />
           <Route path="/company/auth" element={<PortalLayout><AuthPage /></PortalLayout>} />
           <Route path="/vendor/auth" element={<PortalLayout><AuthPage /></PortalLayout>} />
+          <Route path="/accept-invite" element={<PortalLayout><AcceptInvite /></PortalLayout>} />
 
           {/* Protected Enterprise Portal */}
           <Route
@@ -82,6 +86,7 @@ function App() {
             <Route path="invoices" element={<Invoices />} />
             <Route path="logs" element={<ActivityLogs />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="team" element={<TeamManagement />} />
           </Route>
 
           {/* Protected Vendor Portal */}

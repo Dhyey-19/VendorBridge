@@ -13,7 +13,8 @@ import {
   History, 
   BarChart3,
   LogOut,
-  Bell
+  Bell,
+  UserCog
 } from 'lucide-react';
 import './Layout.css';
 
@@ -31,6 +32,7 @@ function Layout() {
   const navItems = [
     { path: '/company/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/company/vendors', label: 'Vendors', icon: Users },
+    { path: '/company/team', label: 'Team Management', icon: UserCog },
     { path: '/company/rfqs', label: 'RFQs', icon: FileQuestion },
     { path: '/company/quotations', label: 'Quotations', icon: FileText },
     { path: '/company/approvals', label: 'Approvals', icon: CheckSquare },
@@ -39,6 +41,24 @@ function Layout() {
     { path: '/company/logs', label: 'Activity Logs', icon: History },
     { path: '/company/reports', label: 'Reports', icon: BarChart3 },
   ];
+
+  const getInitials = (name) => {
+    if (!name) return 'VB';
+    const parts = name.split(' ');
+    if (parts.length > 1) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].substring(0, 2).toUpperCase();
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case 'admin': return 'Administrator';
+      case 'manager': return 'Manager';
+      case 'officer': return 'Procurement Officer';
+      default: return 'Staff';
+    }
+  };
 
   return (
     <div className="layout-container">
@@ -92,12 +112,10 @@ function Layout() {
               </div>
             )}
             <div className="user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
-              <div className="avatar">{user?.name ? user.name.substring(0, 2).toUpperCase() : 'U'}</div>
+              <div className="avatar">{getInitials(user?.name)}</div>
               <div className="user-info">
-                <span className="user-name">{user?.name || 'User'}</span>
-                <span className="user-role" style={{ textTransform: 'capitalize' }}>
-                  {user?.role === 'officer' ? 'Procurement Officer' : user?.role || 'Company User'}
-                </span>
+                <span className="user-name">{user?.name || 'Enterprise Operator'}</span>
+                <span className="user-role">{getRoleLabel(user?.role)}</span>
               </div>
               {showProfileMenu && (
                 <div className="profile-dropdown">
