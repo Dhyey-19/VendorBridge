@@ -28,6 +28,10 @@ const userSchema = new mongoose.Schema({
     enum: ['active', 'inactive'],
     default: 'active'
   },
+  isEmailVerified: {
+    type: Boolean,
+    default: false
+  },
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Company',

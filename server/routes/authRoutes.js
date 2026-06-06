@@ -3,6 +3,8 @@ import {
   registerCompany, 
   registerVendor, 
   loginUser, 
+  loginWithOTP,
+  sendOTP,
   getUserProfile, 
   forgotPassword 
 } from '../controllers/authController.js';
@@ -14,6 +16,8 @@ const router = express.Router();
 router.post('/register/company', registerCompany);
 router.post('/register/vendor', registerVendor);
 router.post('/login', loginUser);
+router.post('/login-otp', loginWithOTP);
+router.post('/send-otp', sendOTP);
 router.post('/forgot-password', forgotPassword);
 
 // Protected profile pathway
