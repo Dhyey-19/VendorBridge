@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Mail, Lock, User, Building, Store, Hash, MapPin, List, Eye, EyeOff } from 'lucide-react';
+import { Shield, Mail, Lock, User, Building, Store, Hash, MapPin, List, Eye, EyeOff, Phone } from 'lucide-react';
 
 const AuthPage = () => {
   const location = useLocation();
@@ -42,6 +42,8 @@ const AuthPage = () => {
   const [vendorName, setVendorName] = useState('');
   const [gstNumber, setGstNumber] = useState('');
   const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [phone, setPhone] = useState('');
   const [category, setCategory] = useState('IT & Software');
 
   // Feedback State
@@ -131,6 +133,8 @@ const AuthPage = () => {
             category: [category],
             gstNumber,
             address,
+            city,
+            phone,
             otp
           };
           
@@ -483,6 +487,42 @@ const AuthPage = () => {
                     onChange={(e) => setAddress(e.target.value)}
                     required
                   ></textarea>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">City</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                    <MapPin size={18} />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    style={{ paddingLeft: '48px' }}
+                    placeholder="e.g. Mumbai"
+                    value={city}
+                    onChange={(e) => setCity(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Phone Number</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)' }}>
+                    <Phone size={18} />
+                  </span>
+                  <input
+                    type="text"
+                    className="form-control"
+                    style={{ paddingLeft: '48px' }}
+                    placeholder="e.g. +91 9876543210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                  />
                 </div>
               </div>
             </>
