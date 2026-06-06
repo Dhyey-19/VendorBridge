@@ -122,7 +122,7 @@ export const registerCompany = async (req, res) => {
  * @access  Public
  */
 export const registerVendor = async (req, res) => {
-  const { email, password, name, vendorName, category, gstNumber, address, otp } = req.body;
+  const { email, password, name, vendorName, category, gstNumber, address, city, phone, otp } = req.body;
 
   if (!otp) {
     return res.status(400).json({ message: 'Verification OTP is required for registration' });
@@ -149,6 +149,8 @@ export const registerVendor = async (req, res) => {
       category: category ? (Array.isArray(category) ? category : [category]) : [],
       gstNumber: gstNumber || '',
       address: address || '',
+      city: city || '',
+      phone: phone || '',
       status: 'Pending'
     });
 

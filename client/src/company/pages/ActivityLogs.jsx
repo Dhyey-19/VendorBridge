@@ -1,15 +1,49 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { History, FileQuestion, Users, CheckSquare, ShoppingCart, DollarSign, Filter } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import './ActivityLogs.css';
 
 function ActivityLogs() {
-  const [logs] = useState([
-    { id: 1, action: 'Invoice Generated', details: 'INV-2023-0046 created for PO-2023-089', user: 'System', time: 'Oct 05, 10:30 AM', icon: DollarSign, color: 'success' },
-    { id: 2, action: 'PO Issued', details: 'PO-2023-089 sent to TechCorp Solutions', user: 'John Doe', time: 'Oct 02, 02:15 PM', icon: ShoppingCart, color: 'info' },
-    { id: 3, action: 'Quotation Approved', details: 'QT-1001 approved by Mark Johnson', user: 'Mark Johnson', time: 'Oct 01, 11:45 AM', icon: CheckSquare, color: 'success' },
-    { id: 4, action: 'Quotation Received', details: 'QT-1001 submitted by TechCorp Solutions', user: 'Vendor Portal', time: 'Sep 30, 09:20 AM', icon: Users, color: 'primary' },
-    { id: 5, action: 'RFQ Created', details: 'RFQ-2023-092 published to Hardware category', user: 'John Doe', time: 'Sep 25, 10:00 AM', icon: FileQuestion, color: 'warning' },
-  ]);
+  const { token } = useAuth();
+  const [logs, setLogs] = useState([]);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const res = await fetch('/api/companies/activities', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const mappedData = data.map((d, index) => {
+            let IconComponent = History;
+            if (d.icon === 'Users') IconComponent = Users;
+            else if (d.icon === 'FileQuestion') IconComponent = FileQuestion;
+            else if (d.icon === 'CheckSquare') IconComponent = CheckSquare;
+            else if (d.icon === 'ShoppingCart') IconComponent = ShoppingCart;
+            else if (d.icon === 'DollarSign') IconComponent = DollarSign;
+            
+            return {
+              id: d._id || index,
+              action: d.action,
+              details: d.details,
+              user: d.user,
+              time: new Date(d.time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+              icon: IconComponent,
+              color: d.color || 'primary'
+            };
+          });
+          setLogs(mappedData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch activities:', error);
+      }
+    };
+
+    if (token) {
+      fetchActivities();
+    }
+  }, [token]);
 
   return (
     <div className="page-container animate-fade-in">

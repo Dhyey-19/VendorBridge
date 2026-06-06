@@ -26,6 +26,10 @@ const vendorSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  phone: {
+    type: String,
+    default: ''
+  },
   complianceScore: {
     type: Number,
     default: 100

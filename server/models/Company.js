@@ -27,7 +27,19 @@ const companySchema = new mongoose.Schema({
     name: String,
     phone: String,
     email: String
-  }
+  },
+  vendors: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Vendor'
+  }],
+  activities: [{
+    action: String,
+    details: String,
+    user: String,
+    icon: String,
+    color: String,
+    time: { type: Date, default: Date.now }
+  }]
 }, {
   timestamps: true
 });
