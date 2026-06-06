@@ -1,5 +1,7 @@
 import Company from '../models/Company.js';
 import User from '../models/User.js';
+import jwt from 'jsonwebtoken';
+import { sendInviteEmail } from '../services/emailService.js';
 
 export const getCompanyProfile = async (req, res) => {
   try {
@@ -70,8 +72,28 @@ export const addCompanyTeamMember = async (req, res) => {
       password,
       role,
       companyId: req.user.companyId,
-      isEmailVerified: true
+      status: 'pending',
+      isEmailVerified: false
     });
+
+    // Generate secure 24h JWT invitation token
+    const inviteToken = jwt.sign(
+      { inviteUserId: user._id }, 
+      process.env.JWT_SECRET || 'your_jwt_secret_key_here', 
+      { expiresIn: '1d' }
+    );
+
+    // Build invitation link
+    const inviteUrl = `${process.env.CLIENT_URL || 'http://localhost:5173'}/accept-invite?token=${inviteToken}`;
+
+    const roleLabels = {
+      admin: 'Administrator',
+      manager: 'Manager',
+      officer: 'Procurement Officer'
+    };
+
+    // Dispatch email
+    await sendInviteEmail(email, name, inviteUrl, roleLabels[role] || role);
 
     res.status(201).json({
       _id: user._id,

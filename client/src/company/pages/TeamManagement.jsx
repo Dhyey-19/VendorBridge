@@ -78,7 +78,7 @@ function TeamManagement() {
   const handleToggleStatus = async (memberId, currentStatus) => {
     if (!isAdmin) return;
     
-    const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
+    const newStatus = (currentStatus === 'active' || currentStatus === 'pending') ? 'inactive' : 'active';
     
     try {
       const res = await fetch(`/api/companies/team/${memberId}`, {
@@ -291,8 +291,12 @@ function TeamManagement() {
                       </span>
                     </td>
                     <td>
-                      <span className={`badge badge-${member.status === 'active' ? 'success' : 'danger'}`}>
-                        {member.status === 'active' ? 'Active' : 'Inactive'}
+                      <span className={`badge badge-${
+                        member.status === 'active' ? 'success' : 
+                        member.status === 'pending' ? 'warning' : 'danger'
+                      }`}>
+                        {member.status === 'active' ? 'Active' : 
+                         member.status === 'pending' ? 'Pending' : 'Inactive'}
                       </span>
                     </td>
                     {isAdmin && (
@@ -304,16 +308,16 @@ function TeamManagement() {
                         ) : (
                           <button
                             onClick={() => handleToggleStatus(member._id, member.status)}
-                            className={`btn ${member.status === 'active' ? 'btn-secondary' : 'btn-primary'}`}
+                            className={`btn ${member.status === 'active' || member.status === 'pending' ? 'btn-secondary' : 'btn-primary'}`}
                             style={{ 
                               padding: '0.35rem 0.75rem', 
                               fontSize: '0.75rem',
-                              color: member.status === 'active' ? 'var(--danger-color)' : 'white',
-                              borderColor: member.status === 'active' ? 'var(--danger-color)' : 'transparent',
-                              backgroundColor: member.status === 'active' ? 'transparent' : 'var(--success-color)'
+                              color: member.status === 'active' || member.status === 'pending' ? 'var(--danger-color)' : 'white',
+                              borderColor: member.status === 'active' || member.status === 'pending' ? 'var(--danger-color)' : 'transparent',
+                              backgroundColor: member.status === 'active' || member.status === 'pending' ? 'transparent' : 'var(--success-color)'
                             }}
                           >
-                            {member.status === 'active' ? (
+                            {member.status === 'active' || member.status === 'pending' ? (
                               <>
                                 <UserX size={12} />
                                 Deactivate

@@ -18,6 +18,7 @@ import Invoices from './company/pages/Invoices';
 import ActivityLogs from './company/pages/ActivityLogs';
 import Reports from './company/pages/Reports';
 import TeamManagement from './company/pages/TeamManagement';
+import AcceptInvite from './pages/AcceptInvite';
 
 
 // Route Guard Component
@@ -63,6 +64,7 @@ function App() {
           <Route path="/" element={<PortalLayout><LandingPage /></PortalLayout>} />
           <Route path="/company/auth" element={<PortalLayout><AuthPage /></PortalLayout>} />
           <Route path="/vendor/auth" element={<PortalLayout><AuthPage /></PortalLayout>} />
+          <Route path="/accept-invite" element={<PortalLayout><AcceptInvite /></PortalLayout>} />
 
           {/* Protected Enterprise Portal */}
           <Route

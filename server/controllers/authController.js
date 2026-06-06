@@ -314,3 +314,61 @@ export const forgotPassword = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * @desc    Accept team invitation, activate user and log in automatically
+ * @route   POST /api/auth/accept-invite
+ * @access  Public
+ */
+export const acceptInvite = async (req, res) => {
+  const { token } = req.body;
+
+  if (!token) {
+    return res.status(400).json({ message: 'Invitation token is required' });
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your_jwt_secret_key_here');
+    
+    if (!decoded.inviteUserId) {
+      return res.status(400).json({ message: 'Invalid invitation token payload' });
+    }
+
+    const user = await User.findById(decoded.inviteUserId);
+    if (!user) {
+      return res.status(404).json({ message: 'Invited user account not found' });
+    }
+
+    if (user.status === 'active') {
+      return res.status(400).json({ message: 'Invitation has already been accepted' });
+    }
+
+    if (user.status === 'inactive') {
+      return res.status(400).json({ message: 'This account has been deactivated by administration' });
+    }
+
+    // Activate the user
+    user.status = 'active';
+    user.isEmailVerified = true;
+    await user.save();
+
+    // Generate login token
+    const loginToken = generateToken(user._id);
+
+    res.json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      isEmailVerified: user.isEmailVerified,
+      companyId: user.companyId,
+      token: loginToken
+    });
+  } catch (error) {
+    if (error.name === 'TokenExpiredError') {
+      return res.status(400).json({ message: 'The invitation link has expired. Please ask your administrator to send a new invite.' });
+    }
+    res.status(400).json({ message: 'Invalid or corrupted invitation link' });
+  }
+};
