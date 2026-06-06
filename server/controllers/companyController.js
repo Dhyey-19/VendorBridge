@@ -1,4 +1,5 @@
 import Company from '../models/Company.js';
+import User from '../models/User.js';
 
 export const getCompanyProfile = async (req, res) => {
   try {
@@ -26,3 +27,106 @@ export const updateCompanyProfile = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+/**
+ * @desc    Get all company staff/team members
+ * @route   GET /api/companies/team
+ * @access  Private (Company users)
+ */
+export const getCompanyTeam = async (req, res) => {
+  try {
+    const team = await User.find({ companyId: req.user.companyId }).select('-password');
+    res.json(team);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Add a new internal staff/team member
+ * @route   POST /api/companies/team
+ * @access  Private (Company admin)
+ */
+export const addCompanyTeamMember = async (req, res) => {
+  try {
+    const { name, email, password, role } = req.body;
+
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (!['admin', 'manager', 'officer'].includes(role)) {
+      return res.status(400).json({ message: 'Invalid role selection' });
+    }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User account with this email already exists' });
+    }
+
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role,
+      companyId: req.user.companyId,
+      isEmailVerified: true
+    });
+
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      isEmailVerified: user.isEmailVerified,
+      companyId: user.companyId
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+/**
+ * @desc    Update an internal staff/team member's status or role
+ * @route   PUT /api/companies/team/:id
+ * @access  Private (Company admin)
+ */
+export const updateCompanyTeamMember = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, role } = req.body;
+
+    const member = await User.findOne({ _id: id, companyId: req.user.companyId });
+    if (!member) {
+      return res.status(404).json({ message: 'Team member not found in your company' });
+    }
+
+    // Prevent self-deactivation
+    if (member._id.toString() === req.user._id.toString() && status === 'inactive') {
+      return res.status(400).json({ message: 'You cannot deactivate your own administrative account' });
+    }
+
+    if (role && ['admin', 'manager', 'officer'].includes(role)) {
+      member.role = role;
+    }
+
+    if (status && ['active', 'inactive'].includes(status)) {
+      member.status = status;
+    }
+
+    const updatedMember = await member.save();
+    
+    res.json({
+      _id: updatedMember._id,
+      name: updatedMember.name,
+      email: updatedMember.email,
+      role: updatedMember.role,
+      status: updatedMember.status,
+      companyId: updatedMember.companyId
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
