@@ -179,3 +179,7 @@ export const updateCompanyTeamMember = async (req, res) => {
       status: updatedMember.status,
       companyId: updatedMember.companyId
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
