@@ -8,7 +8,8 @@ const rfqSchema = new mongoose.Schema({
   },
   client: {
     type: String, // Or ObjectId referencing Company
-    required: true
+    required: false,
+    default: ''
   },
   companyId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -17,7 +18,8 @@ const rfqSchema = new mongoose.Schema({
   },
   budget: {
     type: Number,
-    required: true
+    required: false,
+    default: 0
   },
   deadline: {
     type: Date,
@@ -25,12 +27,30 @@ const rfqSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ['Open', 'Closed', 'Awarded'],
+    enum: ['Open', 'Closed', 'Awarded', 'Active', 'Draft'], // support Active and Draft status from the UI
     default: 'Open'
   },
+  category: {
+    type: String,
+    default: 'Hardware'
+  },
   description: {
-    type: String
-  }
+    type: String,
+    default: ''
+  },
+  items: [
+    {
+      name: { type: String, required: true },
+      quantity: { type: Number, required: true },
+      uom: { type: String, default: 'Nos' }
+    }
+  ],
+  invitedVendors: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Vendor'
+    }
+  ]
 }, {
   timestamps: true
 });
