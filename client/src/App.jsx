@@ -5,6 +5,7 @@ import PortalLayout from './components/PortalLayout';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import VendorHome from './vendor/pages/Home';
+import VendorProfile from './vendor/pages/Profile';
 
 // New Company Pages
 import Layout from './components/Layout';
@@ -89,6 +90,14 @@ function App() {
             element={
               <ProtectedRoute allowedRoles={['vendor']}>
                 <PortalLayout><VendorHome /></PortalLayout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vendor/profile"
+            element={
+              <ProtectedRoute allowedRoles={['vendor']}>
+                <PortalLayout><VendorProfile /></PortalLayout>
               </ProtectedRoute>
             }
           />

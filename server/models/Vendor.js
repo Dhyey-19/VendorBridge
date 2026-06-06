@@ -22,6 +22,10 @@ const vendorSchema = new mongoose.Schema({
     type: String,
     default: ''
   },
+  city: {
+    type: String,
+    default: ''
+  },
   complianceScore: {
     type: Number,
     default: 100

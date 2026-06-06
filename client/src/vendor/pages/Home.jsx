@@ -1,17 +1,12 @@
-import React, { useState } from 'react';
-import { Store, DollarSign, Award, Percent, ClipboardList, Send, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Store, DollarSign, Award, Percent, ClipboardList, Send, CheckCircle, FileText } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 
 const VendorHome = () => {
-  // Mock Data & State
-  const [rfps, setRfps] = useState([
-    { id: 1, title: 'Enterprise Cloud Infrastructure Migration', client: 'Global Corp', budget: '$45,000', deadline: '2026-06-25', status: 'Open' },
-    { id: 2, title: 'Office Hardware Supply & Setup', client: 'Stark Industries', budget: '$12,500', deadline: '2026-07-02', status: 'Open' },
-    { id: 3, title: 'AI-Based Customer Support Chatbot', client: 'Apex Retail', budget: '$28,000', deadline: '2026-06-18', status: 'Open' }
-  ]);
-
-  const [myBids, setMyBids] = useState([
-    { id: 101, rfpTitle: 'Logistics Fleet Tracking App', client: 'FedEx Local', amount: '$18,500', status: 'Pending' }
-  ]);
+  const { user, token } = useAuth();
+  const [rfps, setRfps] = useState([]);
+  const [myBids, setMyBids] = useState([]);
+  const [purchaseOrders, setPurchaseOrders] = useState([]);
 
   const [activeTab, setActiveTab] = useState('open-rfps');
   const [selectedRfp, setSelectedRfp] = useState(null);
@@ -19,9 +14,35 @@ const VendorHome = () => {
   const [bidProposal, setBidProposal] = useState('');
   const [notification, setNotification] = useState('');
 
+  useEffect(() => {
+    if (!token) return;
+
+    const fetchDashboardData = async () => {
+      try {
+        const headers = { 'Authorization': `Bearer ${token}` };
+        
+        // Fetch RFQs
+        const rfqRes = await fetch('/api/vendors/rfqs', { headers });
+        if (rfqRes.ok) setRfps(await rfqRes.json());
+
+        // Fetch My Quotations
+        const bidsRes = await fetch('/api/vendors/quotations', { headers });
+        if (bidsRes.ok) setMyBids(await bidsRes.json());
+
+        // Fetch Purchase Orders
+        const poRes = await fetch('/api/vendors/purchase-orders', { headers });
+        if (poRes.ok) setPurchaseOrders(await poRes.json());
+      } catch (error) {
+        console.error("Failed to fetch dashboard data:", error);
+      }
+    };
+
+    fetchDashboardData();
+  }, [token]);
+
   const handleOpenBidModal = (rfp) => {
     setSelectedRfp(rfp);
-    setBidAmount(rfp.budget.replace(/[^0-9]/g, ''));
+    setBidAmount(rfp.budget ? rfp.budget.toString() : '');
     setBidProposal('');
   };
 
@@ -29,25 +50,48 @@ const VendorHome = () => {
     setSelectedRfp(null);
   };
 
-  const handleSubmitBid = (e) => {
+  const handleSubmitBid = async (e) => {
     e.preventDefault();
     if (!bidAmount || !bidProposal) return;
 
-    const newBid = {
-      id: Date.now(),
-      rfpTitle: selectedRfp.title,
-      client: selectedRfp.client,
-      amount: `$${Number(bidAmount).toLocaleString()}`,
-      status: 'Pending'
-    };
+    try {
+      const res = await fetch('/api/vendors/quotations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          rfpId: selectedRfp._id,
+          amount: Number(bidAmount),
+          proposal: bidProposal
+        })
+      });
 
-    setMyBids([newBid, ...myBids]);
-    setNotification(`Successfully submitted bid of ${newBid.amount} for ${selectedRfp.title}!`);
-    handleCloseBidModal();
+      if (res.ok) {
+        const newBid = await res.json();
+        // Optimistically add to list to avoid refetch
+        setMyBids([{ 
+          _id: newBid._id, 
+          amount: newBid.amount, 
+          status: newBid.status, 
+          rfpId: { title: selectedRfp.title, client: selectedRfp.companyId?.name || selectedRfp.client } 
+        }, ...myBids]);
+        
+        setNotification(`Successfully submitted bid of $${Number(bidAmount).toLocaleString()} for ${selectedRfp.title}!`);
+        handleCloseBidModal();
 
-    setTimeout(() => {
-      setNotification('');
-    }, 4000);
+        setTimeout(() => {
+          setNotification('');
+        }, 4000);
+      }
+    } catch (error) {
+      console.error("Failed to submit bid:", error);
+    }
+  };
+
+  const calculateRevenue = () => {
+    return purchaseOrders.reduce((sum, po) => sum + (po.amount || 0), 0);
   };
 
   return (
@@ -76,20 +120,8 @@ const VendorHome = () => {
       {/* Header Profile */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 800 }}>Welcome Back, <span className="gradient-text-vendor">Acme Supplies</span></h1>
+          <h1 style={{ fontSize: '32px', fontWeight: 800 }}>Welcome Back, <span className="gradient-text-vendor">{user?.name || 'Vendor'}</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Manage your corporate bids, browse active RFPs, and view analytics.</p>
-        </div>
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '8px 16px',
-          background: 'rgba(236, 72, 153, 0.05)',
-          border: '1px solid rgba(236, 72, 153, 0.2)',
-          borderRadius: '12px'
-        }}>
-          <Store size={20} style={{ color: 'var(--accent-vendor)' }} />
-          <span style={{ fontSize: '14px', fontWeight: 600 }}>ID: VND-8890-AC</span>
         </div>
       </div>
 
@@ -105,7 +137,7 @@ const VendorHome = () => {
             width: '48px',
             height: '48px',
             borderRadius: '12px',
-            backgroundColor: 'rgba(236, 72, 153, 0.1)',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -115,7 +147,7 @@ const VendorHome = () => {
           </div>
           <div>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Active Bids</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{myBids.length}</h3>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{myBids.filter(b => b.status === 'Pending').length}</h3>
           </div>
         </div>
 
@@ -134,7 +166,7 @@ const VendorHome = () => {
           </div>
           <div>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Won Contracts</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>12</h3>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{myBids.filter(b => b.status === 'Accepted').length}</h3>
           </div>
         </div>
 
@@ -152,8 +184,8 @@ const VendorHome = () => {
             <DollarSign size={24} />
           </div>
           <div>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Annual Revenue</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>$214,800</h3>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Total PO Revenue</span>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>${calculateRevenue().toLocaleString()}</h3>
           </div>
         </div>
 
@@ -171,8 +203,8 @@ const VendorHome = () => {
             <Percent size={24} />
           </div>
           <div>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Profile Score</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>98%</h3>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Purchase Orders</span>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{purchaseOrders.length}</h3>
           </div>
         </div>
       </div>
@@ -195,10 +227,11 @@ const VendorHome = () => {
               borderBottom: '2px solid',
               borderColor: activeTab === 'open-rfps' ? 'var(--accent-vendor)' : 'transparent',
               cursor: 'pointer',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              background: 'none'
             }}
           >
-            Available RFPs ({rfps.length})
+            Available RFQs ({rfps.length})
           </button>
           <button
             onClick={() => setActiveTab('my-bids')}
@@ -210,17 +243,36 @@ const VendorHome = () => {
               borderBottom: '2px solid',
               borderColor: activeTab === 'my-bids' ? 'var(--accent-vendor)' : 'transparent',
               cursor: 'pointer',
-              transition: 'all 0.2s'
+              transition: 'all 0.2s',
+              background: 'none'
             }}
           >
             My Submissions ({myBids.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('purchase-orders')}
+            style={{
+              padding: '12px 8px',
+              fontWeight: 600,
+              fontSize: '15px',
+              color: activeTab === 'purchase-orders' ? 'var(--accent-vendor)' : 'var(--text-secondary)',
+              borderBottom: '2px solid',
+              borderColor: activeTab === 'purchase-orders' ? 'var(--accent-vendor)' : 'transparent',
+              cursor: 'pointer',
+              transition: 'all 0.2s',
+              background: 'none'
+            }}
+          >
+            Purchase Orders ({purchaseOrders.length})
           </button>
         </div>
 
         {activeTab === 'open-rfps' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {rfps.map((rfp) => (
-              <div key={rfp.id} className="glass-card" style={{
+            {rfps.length === 0 ? (
+              <div className="text-center text-muted py-8">No open RFQs available right now.</div>
+            ) : rfps.map((rfp) => (
+              <div key={rfp._id} className="glass-card" style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -229,13 +281,13 @@ const VendorHome = () => {
               }}>
                 <div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                    <span style={{ fontSize: '12px', color: 'var(--accent-vendor)', fontWeight: 600 }}>{rfp.client}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--accent-vendor)', fontWeight: 600 }}>{rfp.companyId?.name || rfp.client}</span>
                     <span style={{ width: '4px', height: '4px', backgroundColor: 'var(--text-muted)', borderRadius: '50%' }}></span>
-                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Deadline: {rfp.deadline}</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Deadline: {new Date(rfp.deadline).toLocaleDateString()}</span>
                   </div>
                   <h4 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>{rfp.title}</h4>
                   <span style={{ fontSize: '14px', color: 'var(--text-secondary)' }}>
-                    Target Budget: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{rfp.budget}</span>
+                    Target Budget: <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>${rfp.budget.toLocaleString()}</span>
                   </span>
                 </div>
                 <button onClick={() => handleOpenBidModal(rfp)} className="btn btn-vendor" style={{ padding: '10px 20px', fontSize: '14px' }}>
@@ -248,34 +300,81 @@ const VendorHome = () => {
 
         {activeTab === 'my-bids' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {myBids.map((bid) => (
-              <div key={bid.id} className="glass-card" style={{
+            {myBids.length === 0 ? (
+              <div className="text-center text-muted py-8">You haven't submitted any bids yet.</div>
+            ) : myBids.map((bid) => (
+              <div key={bid._id} className="glass-card" style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 flexWrap: 'wrap',
                 gap: '16px',
-                borderColor: 'rgba(236, 72, 153, 0.1)'
+                borderColor: 'rgba(59, 130, 246, 0.1)'
               }}>
                 <div>
-                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>{bid.rfpTitle}</h4>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>{bid.rfpId?.title || 'Unknown RFQ'}</h4>
                   <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
-                    Client: <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{bid.client || 'Enterprise'}</span>
+                    Client: <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{bid.rfpId?.client || 'Enterprise'}</span>
                   </p>
                 </div>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '4px', color: 'var(--accent-vendor)' }}>{bid.amount}</div>
+                  <div style={{ fontWeight: 700, fontSize: '16px', marginBottom: '4px', color: 'var(--accent-vendor)' }}>${bid.amount.toLocaleString()}</div>
                   <span style={{
                     fontSize: '11px',
                     fontWeight: 700,
                     textTransform: 'uppercase',
                     padding: '3px 8px',
                     borderRadius: '4px',
-                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
-                    border: '1px solid rgba(245, 158, 11, 0.2)',
-                    color: 'var(--warning)'
+                    backgroundColor: bid.status === 'Accepted' ? 'rgba(16, 185, 129, 0.1)' : bid.status === 'Rejected' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                    border: '1px solid',
+                    borderColor: bid.status === 'Accepted' ? 'rgba(16, 185, 129, 0.2)' : bid.status === 'Rejected' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                    color: bid.status === 'Accepted' ? 'var(--success)' : bid.status === 'Rejected' ? 'var(--danger)' : 'var(--warning)'
                   }}>
                     {bid.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === 'purchase-orders' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {purchaseOrders.length === 0 ? (
+              <div className="text-center text-muted py-8">No purchase orders received yet.</div>
+            ) : purchaseOrders.map((po) => (
+              <div key={po._id} className="glass-card" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '16px',
+                borderColor: 'rgba(16, 185, 129, 0.1)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', color: 'var(--success)' }}>
+                    <FileText size={24} />
+                  </div>
+                  <div>
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>PO #: {po.poNumber}</h4>
+                    <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+                      Client: <span style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{po.companyId?.name || 'Enterprise'}</span>
+                    </p>
+                    <p style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Date: {new Date(po.createdAt).toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontWeight: 700, fontSize: '18px', marginBottom: '4px', color: 'var(--text-primary)' }}>${po.amount.toLocaleString()}</div>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: po.status === 'Fulfilled' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(6, 182, 212, 0.1)',
+                    color: po.status === 'Fulfilled' ? 'var(--success)' : 'var(--secondary)'
+                  }}>
+                    {po.status}
                   </span>
                 </div>
               </div>
@@ -304,11 +403,11 @@ const VendorHome = () => {
             maxWidth: '520px',
             padding: '32px',
             borderRadius: '20px',
-            border: '1px solid rgba(236, 72, 153, 0.2)'
+            border: '1px solid rgba(59, 130, 246, 0.2)'
           }}>
             <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>Submit Proposal</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
-              You are placing a bid for <strong style={{ color: 'var(--text-primary)' }}>{selectedRfp.title}</strong> posted by {selectedRfp.client}.
+              You are placing a bid for <strong style={{ color: 'var(--text-primary)' }}>{selectedRfp.title}</strong> posted by {selectedRfp.companyId?.name || selectedRfp.client}.
             </p>
             
             <form onSubmit={handleSubmitBid}>

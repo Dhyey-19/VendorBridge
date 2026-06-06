@@ -1,16 +1,99 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Plus, Search, MoreVertical, Edit, Trash2 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import './Vendors.css';
 
 function Vendors() {
-  const [vendors, setVendors] = useState([
-    { id: 'V-001', name: 'TechCorp Solutions', category: 'Hardware', contact: 'john@techcorp.com', status: 'Active', rating: 4.8 },
-    { id: 'V-002', name: 'Office Plus', category: 'Supplies', contact: 'sales@officeplus.net', status: 'Active', rating: 4.2 },
-    { id: 'V-003', name: 'Global Logistics', category: 'Services', contact: 'support@globallog.com', status: 'Pending', rating: 0 },
-    { id: 'V-004', name: 'Prime Software', category: 'Software', contact: 'billing@primesoft.io', status: 'Inactive', rating: 3.9 },
-  ]);
-
+  const [vendors, setVendors] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { token } = useAuth();
   const [showModal, setShowModal] = useState(false);
+
+  const fetchVendors = async () => {
+    try {
+      const res = await fetch('/api/companies/vendors', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setVendors(data);
+      }
+    } catch (error) {
+      console.error('Failed to fetch vendors:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      fetchVendors();
+    }
+  }, [token]);
+
+  const [editingVendor, setEditingVendor] = useState(null);
+  const [formData, setFormData] = useState({
+    name: '',
+    category: '',
+    gstNumber: '',
+    city: ''
+  });
+
+  const handleDelete = async (id) => {
+    if (window.confirm("Are you sure you want to delete this vendor?")) {
+      try {
+        const res = await fetch(`/api/companies/vendors/${id}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          fetchVendors();
+        }
+      } catch (error) {
+        console.error("Failed to delete vendor", error);
+      }
+    }
+  };
+
+  const handleEditClick = (vendor) => {
+    setEditingVendor(vendor);
+    setFormData({
+      name: vendor.name || '',
+      category: Array.isArray(vendor.category) ? vendor.category[0] : vendor.category || '',
+      gstNumber: vendor.gstNumber || '',
+      city: vendor.city || ''
+    });
+    setShowModal(true);
+  };
+
+  const handleSaveVendor = async (e) => {
+    e.preventDefault();
+    if (editingVendor) {
+      try {
+        const res = await fetch(`/api/companies/vendors/${editingVendor._id}`, {
+          method: 'PUT',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}` 
+          },
+          body: JSON.stringify({
+            name: formData.name,
+            category: [formData.category],
+            gstNumber: formData.gstNumber,
+            city: formData.city
+          })
+        });
+        if (res.ok) {
+          setShowModal(false);
+          fetchVendors();
+        }
+      } catch (error) {
+        console.error("Failed to update vendor", error);
+      }
+    }
+  };
 
   return (
     <div className="page-container animate-fade-in">
@@ -36,13 +119,12 @@ function Vendors() {
               <option>All Categories</option>
               <option>Hardware</option>
               <option>Software</option>
-              <option>Supplies</option>
-            </select>
-            <select className="form-select">
-              <option>All Statuses</option>
-              <option>Active</option>
-              <option>Pending</option>
-              <option>Inactive</option>
+              <option>IT Services</option>
+              <option>Office Supplies</option>
+              <option>Consulting</option>
+              <option>Logistics & Supply Chain</option>
+              <option>Marketing & PR</option>
+              <option>Manufacturing</option>
             </select>
           </div>
         </div>
@@ -51,37 +133,32 @@ function Vendors() {
           <table>
             <thead>
               <tr>
-                <th>Vendor ID</th>
                 <th>Vendor Name</th>
                 <th>Category</th>
-                <th>Contact Email</th>
-                <th>Rating</th>
-                <th>Status</th>
+                <th>City</th>
+                <th>GST No.</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              {vendors.map(vendor => (
-                <tr key={vendor.id}>
-                  <td className="font-medium">{vendor.id}</td>
-                  <td>{vendor.name}</td>
-                  <td>{vendor.category}</td>
-                  <td>{vendor.contact}</td>
-                  <td>
-                    <div className="rating-indicator">
-                      ★ {vendor.rating > 0 ? vendor.rating : 'N/A'}
-                    </div>
-                  </td>
-                  <td>
-                    <span className={`badge badge-${vendor.status === 'Active' ? 'success' : vendor.status === 'Pending' ? 'warning' : 'danger'}`}>
-                      {vendor.status}
-                    </span>
-                  </td>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-4 text-muted">Loading vendors...</td>
+                </tr>
+              ) : vendors.length === 0 ? (
+                <tr>
+                  <td colSpan="5" className="text-center py-4 text-muted">No vendors found.</td>
+                </tr>
+              ) : vendors.map(vendor => (
+                <tr key={vendor._id}>
+                  <td className="font-medium">{vendor.name}</td>
+                  <td>{Array.isArray(vendor.category) ? vendor.category.join(', ') : vendor.category || 'N/A'}</td>
+                  <td>{vendor.city || 'N/A'}</td>
+                  <td className="text-sm font-medium">{vendor.gstNumber || 'N/A'}</td>
                   <td>
                     <div className="action-buttons">
-                      <button className="icon-btn text-primary"><Edit size={16} /></button>
-                      <button className="icon-btn text-danger"><Trash2 size={16} /></button>
-                      <button className="icon-btn"><MoreVertical size={16} /></button>
+                      <button className="icon-btn text-primary" title="Edit Vendor" onClick={() => handleEditClick(vendor)}><Edit size={16} /></button>
+                      <button className="icon-btn text-danger" title="Delete Vendor" onClick={() => handleDelete(vendor._id)}><Trash2 size={16} /></button>
                     </div>
                   </td>
                 </tr>
@@ -92,51 +169,48 @@ function Vendors() {
       </div>
 
       {showModal && (
-        <div className="modal-overlay">
-          <div className="modal-content animate-fade-in">
+        <div className="modal-overlay" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }}>
+          <div className="modal-content animate-fade-in" style={{ display: 'flex', flexDirection: 'column', maxHeight: '85vh', margin: 'auto', overflow: 'hidden' }}>
             <div className="modal-header">
-              <h3>Register New Vendor</h3>
+              <h3>{editingVendor ? 'Edit Vendor' : 'Register New Vendor'}</h3>
               <button className="close-btn" onClick={() => setShowModal(false)}>&times;</button>
             </div>
-            <div className="modal-body">
-              <form>
+            <form onSubmit={handleSaveVendor} style={{ display: 'flex', flexDirection: 'column', overflow: 'hidden', flex: 1 }}>
+              <div className="modal-body" style={{ overflowY: 'auto', flex: 1, padding: '24px' }}>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="form-group">
                     <label>Vendor Name</label>
-                    <input type="text" placeholder="Company Name" />
+                    <input type="text" value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Company Name" required />
                   </div>
                   <div className="form-group">
                     <label>Category</label>
-                    <select>
-                      <option>Hardware</option>
-                      <option>Software</option>
-                      <option>Supplies</option>
-                      <option>Services</option>
+                    <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required>
+                      <option value="">-- Select --</option>
+                      <option value="Hardware">Hardware</option>
+                      <option value="Software">Software</option>
+                      <option value="IT Services">IT Services</option>
+                      <option value="Office Supplies">Office Supplies</option>
+                      <option value="Consulting">Consulting</option>
+                      <option value="Logistics & Supply Chain">Logistics & Supply Chain</option>
+                      <option value="Marketing & PR">Marketing & PR</option>
+                      <option value="Manufacturing">Manufacturing</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>Email Address</label>
-                    <input type="email" placeholder="contact@company.com" />
+                    <label>City</label>
+                    <input type="text" value={formData.city} onChange={(e) => setFormData({...formData, city: e.target.value})} placeholder="e.g. Ahmedabad" />
                   </div>
                   <div className="form-group">
-                    <label>Phone Number</label>
-                    <input type="tel" placeholder="+1 (555) 000-0000" />
-                  </div>
-                  <div className="form-group grid-span-2" style={{ gridColumn: 'span 2' }}>
                     <label>GST / Tax ID</label>
-                    <input type="text" placeholder="GSTIN or Tax ID" />
-                  </div>
-                  <div className="form-group grid-span-2" style={{ gridColumn: 'span 2' }}>
-                    <label>Address</label>
-                    <textarea placeholder="Full address" rows="3"></textarea>
+                    <input type="text" value={formData.gstNumber} onChange={(e) => setFormData({...formData, gstNumber: e.target.value})} placeholder="GSTIN or Tax ID" />
                   </div>
                 </div>
-              </form>
-            </div>
-            <div className="modal-footer flex justify-end gap-4 mt-6">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
-              <button className="btn btn-primary" onClick={() => setShowModal(false)}>Save Vendor</button>
-            </div>
+              </div>
+              <div className="modal-footer flex justify-end gap-4" style={{ padding: '16px 24px', background: 'var(--surface-color)', borderTop: '1px solid var(--border-color)' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)}>Cancel</button>
+                <button type="submit" className="btn btn-primary">Save Vendor</button>
+              </div>
+            </form>
           </div>
         </div>
       )}

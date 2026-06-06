@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Building2, Store, LogOut, Bell } from 'lucide-react';
+import { Shield, Building2, Store, LogOut, Bell, User } from 'lucide-react';
 
 const Navbar = () => {
   const location = useLocation();
   const { user, logout } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const path = location.pathname;
 
   const isVendor = user && user.role === 'vendor';
@@ -50,8 +52,8 @@ const Navbar = () => {
     }
     return {
       color: 'var(--accent-vendor)',
-      borderColor: 'rgba(236, 72, 153, 0.3)',
-      backgroundColor: 'rgba(236, 72, 153, 0.1)'
+      borderColor: 'rgba(59, 130, 246, 0.3)',
+      backgroundColor: 'rgba(59, 130, 246, 0.1)'
     };
   };
 
@@ -98,7 +100,7 @@ const Navbar = () => {
             <>
               <Link to="/vendor" style={{ fontWeight: 500, color: 'var(--text-primary)' }}>Dashboard</Link>
               <Link to="#" style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>My Offers</Link>
-              <Link to="#" style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>Profile</Link>
+              <Link to="/vendor/profile" style={{ fontWeight: 500, color: 'var(--text-secondary)' }}>Profile</Link>
             </>
           )}
 
@@ -122,55 +124,89 @@ const Navbar = () => {
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           {user ? (
             <>
-              <button style={{ color: 'var(--text-secondary)', position: 'relative', cursor: 'pointer' }}>
-                <Bell size={20} />
-                <span style={{
-                  position: 'absolute',
-                  top: '-2px',
-                  right: '-2px',
-                  width: '8px',
-                  height: '8px',
-                  backgroundColor: 'var(--error)',
-                  borderRadius: '50%'
-                }}></span>
-              </button>
+              <div style={{ position: 'relative' }}>
+                <button 
+                  onClick={() => setShowNotifications(!showNotifications)}
+                  style={{ color: 'var(--text-secondary)', position: 'relative', cursor: 'pointer', background: 'none', border: 'none' }}
+                >
+                  <Bell size={20} />
+                  <span style={{
+                    position: 'absolute',
+                    top: '-2px',
+                    right: '-2px',
+                    width: '8px',
+                    height: '8px',
+                    backgroundColor: 'var(--error)',
+                    borderRadius: '50%'
+                  }}></span>
+                </button>
+                {showNotifications && (
+                  <div style={{
+                    position: 'absolute', top: '40px', right: '-10px', width: '300px',
+                    background: 'var(--bg-secondary)', borderRadius: '12px', padding: '16px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid var(--border-light)', zIndex: 50
+                  }}>
+                    <h4 style={{ margin: '0 0 12px 0', fontSize: '14px', fontWeight: 600 }}>Notifications</h4>
+                    <div style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px', padding: '16px 0' }}>
+                      No new notifications
+                    </div>
+                  </div>
+                )}
+              </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '12px', borderLeft: '1px solid var(--border-light)' }}>
-                <div style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '50%',
-                  backgroundColor: 'var(--bg-tertiary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: roleStyles.color
-                }}>
-                  {isVendor ? <Store size={16} /> : <Building2 size={16} />}
-                </div>
-                
-                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 600 }}>
-                    {user.name}
-                  </span>
-                  <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
-                    {user.role === 'vendor' ? 'Vendor Partner' : 'Enterprise'}
-                  </span>
-                </div>
-                
-                <button
-                  onClick={logout}
-                  title="Log Out"
-                  style={{
-                    marginLeft: '12px',
-                    color: 'var(--text-secondary)',
+              <div style={{ position: 'relative' }}>
+                <div 
+                  onClick={() => setShowProfile(!showProfile)}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', paddingLeft: '12px', borderLeft: '1px solid var(--border-light)', cursor: 'pointer' }}
+                >
+                  <div style={{
+                    width: '32px',
+                    height: '32px',
+                    borderRadius: '50%',
+                    backgroundColor: 'var(--bg-tertiary)',
                     display: 'flex',
                     alignItems: 'center',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <LogOut size={18} />
-                </button>
+                    justifyContent: 'center',
+                    color: roleStyles.color
+                  }}>
+                    {isVendor ? <Store size={16} /> : <Building2 size={16} />}
+                  </div>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600 }}>
+                      {user.name}
+                    </span>
+                    <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                      {user.role === 'vendor' ? 'Vendor Partner' : 'Enterprise'}
+                    </span>
+                  </div>
+                </div>
+
+                {showProfile && (
+                  <div style={{
+                    position: 'absolute', top: '50px', right: '0', width: '200px',
+                    background: 'var(--bg-secondary)', borderRadius: '12px', padding: '8px',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.2)', border: '1px solid var(--border-light)', zIndex: 50
+                  }}>
+                    <Link 
+                      to={isVendor ? "/vendor/profile" : "#"}
+                      onClick={() => setShowProfile(false)}
+                      style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', borderRadius: '8px', fontSize: '14px', color: 'var(--text-primary)' }}
+                      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <User size={16} /> Profile
+                    </Link>
+                    <div 
+                      onClick={logout}
+                      style={{ padding: '10px 12px', display: 'flex', alignItems: 'center', gap: '10px', cursor: 'pointer', borderRadius: '8px', fontSize: '14px', color: 'var(--error)' }}
+                      onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239,68,68,0.1)'}
+                      onMouseOut={(e) => e.currentTarget.style.background = 'transparent'}
+                    >
+                      <LogOut size={16} /> Logout
+                    </div>
+                  </div>
+                )}
               </div>
             </>
           ) : (

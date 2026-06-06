@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import { 
   LayoutDashboard, 
   Users, 
@@ -17,8 +19,12 @@ import './Layout.css';
 
 function Layout() {
   const navigate = useNavigate();
+  const { user, logout } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
 
   const handleLogout = () => {
+    logout();
     navigate('/company/auth');
   };
 
@@ -69,16 +75,38 @@ function Layout() {
             <input type="text" placeholder="Search everywhere..." />
           </div>
           <div className="topbar-actions">
-            <button className="icon-btn">
+            <button className="icon-btn" onClick={() => setShowNotifications(!showNotifications)}>
               <Bell size={20} />
               <span className="badge-indicator"></span>
             </button>
-            <div className="user-profile">
-              <div className="avatar">PO</div>
-              <div className="user-info">
-                <span className="user-name">John Doe</span>
-                <span className="user-role">Procurement Officer</span>
+            {showNotifications && (
+              <div className="notifications-dropdown">
+                <div className="notifications-header">
+                  <h4>Notifications</h4>
+                </div>
+                <div className="notifications-body">
+                  <div className="notification-item text-muted text-sm text-center py-4">
+                    No new notifications
+                  </div>
+                </div>
               </div>
+            )}
+            <div className="user-profile" onClick={() => setShowProfileMenu(!showProfileMenu)}>
+              <div className="avatar">{user?.name ? user.name.substring(0, 2).toUpperCase() : 'U'}</div>
+              <div className="user-info">
+                <span className="user-name">{user?.name || 'User'}</span>
+                <span className="user-role" style={{ textTransform: 'capitalize' }}>
+                  {user?.role === 'officer' ? 'Procurement Officer' : user?.role || 'Company User'}
+                </span>
+              </div>
+              {showProfileMenu && (
+                <div className="profile-dropdown">
+                  <div className="profile-dropdown-item" onClick={handleLogout}>
+                    <LogOut size={16} />
+                    <span>Logout</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
