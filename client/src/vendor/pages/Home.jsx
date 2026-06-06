@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Store, DollarSign, Award, Percent, ClipboardList, Send, CheckCircle, FileText } from 'lucide-react';
+import { Store, DollarSign, Award, Percent, ClipboardList, Send, CheckCircle, FileText, Sun, Moon } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import AnimatedCounter from '../../components/AnimatedCounter';
 
 const VendorHome = () => {
   const { user, token } = useAuth();
@@ -13,6 +14,16 @@ const VendorHome = () => {
   const [bidAmount, setBidAmount] = useState('');
   const [bidProposal, setBidProposal] = useState('');
   const [notification, setNotification] = useState('');
+
+  // Theme state persisted in localStorage
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    return localStorage.getItem('vendor-theme') === 'dark';
+  });
+
+  // Persist theme choice
+  useEffect(() => {
+    localStorage.setItem('vendor-theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
 
   useEffect(() => {
     if (!token) return;
@@ -95,7 +106,16 @@ const VendorHome = () => {
   };
 
   return (
-    <div>
+    <div 
+      className={`page-container slide-up-reveal ${isDarkMode ? 'dark-theme' : ''}`}
+      style={isDarkMode ? { 
+        backgroundColor: 'var(--bg-color)', 
+        color: 'var(--text-primary)', 
+        minHeight: '100vh', 
+        margin: '-24px', 
+        padding: '24px' 
+      } : {}}
+    >
       {/* Toast Notification */}
       {notification && (
         <div style={{
@@ -123,16 +143,29 @@ const VendorHome = () => {
           <h1 style={{ fontSize: '32px', fontWeight: 800 }}>Welcome Back, <span className="gradient-text-vendor">{user?.name || 'Vendor'}</span></h1>
           <p style={{ color: 'var(--text-secondary)' }}>Manage your corporate bids, browse active RFPs, and view analytics.</p>
         </div>
+        
+        {/* Animated theme switcher */}
+        <button 
+          onClick={() => setIsDarkMode(!isDarkMode)} 
+          className="btn-theme-toggle"
+          title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+        >
+          {isDarkMode ? <Sun size={20} className="text-amber-400" /> : <Moon size={20} className="text-indigo-600" />}
+        </button>
       </div>
 
-      {/* Metrics Row */}
+      {/* Floating Metrics Row */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
         gap: '24px',
         marginBottom: '48px'
       }}>
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        {/* Active Bids Card */}
+        <div 
+          className="glass-card animate-float-1 delay-1" 
+          style={{ display: 'flex', alignItems: 'center', gap: '20px', transition: 'all 0.3s ease' }}
+        >
           <div style={{
             width: '48px',
             height: '48px',
@@ -147,11 +180,17 @@ const VendorHome = () => {
           </div>
           <div>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Active Bids</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{myBids.filter(b => b.status === 'Pending').length}</h3>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>
+              <AnimatedCounter value={myBids.filter(b => b.status === 'Pending').length} />
+            </h3>
           </div>
         </div>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        {/* Won Contracts Card */}
+        <div 
+          className="glass-card animate-float-2 delay-2" 
+          style={{ display: 'flex', alignItems: 'center', gap: '20px', transition: 'all 0.3s ease' }}
+        >
           <div style={{
             width: '48px',
             height: '48px',
@@ -166,11 +205,17 @@ const VendorHome = () => {
           </div>
           <div>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Won Contracts</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{myBids.filter(b => b.status === 'Accepted').length}</h3>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>
+              <AnimatedCounter value={myBids.filter(b => b.status === 'Accepted').length} />
+            </h3>
           </div>
         </div>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        {/* Total Revenue Card */}
+        <div 
+          className="glass-card animate-float-1 delay-3" 
+          style={{ display: 'flex', alignItems: 'center', gap: '20px', transition: 'all 0.3s ease' }}
+        >
           <div style={{
             width: '48px',
             height: '48px',
@@ -185,11 +230,17 @@ const VendorHome = () => {
           </div>
           <div>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Total PO Revenue</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>${calculateRevenue().toLocaleString()}</h3>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>
+              $<AnimatedCounter value={calculateRevenue()} />
+            </h3>
           </div>
         </div>
 
-        <div className="glass-card" style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+        {/* Purchase Orders Card */}
+        <div 
+          className="glass-card animate-float-2 delay-4" 
+          style={{ display: 'flex', alignItems: 'center', gap: '20px', transition: 'all 0.3s ease' }}
+        >
           <div style={{
             width: '48px',
             height: '48px',
@@ -204,13 +255,15 @@ const VendorHome = () => {
           </div>
           <div>
             <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Purchase Orders</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>{purchaseOrders.length}</h3>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>
+              <AnimatedCounter value={purchaseOrders.length} />
+            </h3>
           </div>
         </div>
       </div>
 
       {/* Main Workspace Layout */}
-      <div className="glass-panel" style={{ padding: '32px', borderRadius: '20px', marginBottom: '40px' }}>
+      <div className="glass-panel slide-up-reveal delay-3" style={{ padding: '32px', borderRadius: '20px', marginBottom: '40px' }}>
         <div style={{
           display: 'flex',
           borderBottom: '1px solid var(--border-light)',
@@ -268,11 +321,11 @@ const VendorHome = () => {
         </div>
 
         {activeTab === 'open-rfps' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="slide-up-reveal">
             {rfps.length === 0 ? (
               <div className="text-center text-muted py-8">No open RFQs available right now.</div>
             ) : rfps.map((rfp) => (
-              <div key={rfp._id} className="glass-card" style={{
+              <div key={rfp._id} className="glass-card transition hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md p-4 rounded-xl" style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -299,17 +352,16 @@ const VendorHome = () => {
         )}
 
         {activeTab === 'my-bids' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="slide-up-reveal">
             {myBids.length === 0 ? (
               <div className="text-center text-muted py-8">You haven't submitted any bids yet.</div>
             ) : myBids.map((bid) => (
-              <div key={bid._id} className="glass-card" style={{
+              <div key={bid._id} className="glass-card transition hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md p-4 rounded-xl" style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 flexWrap: 'wrap',
-                gap: '16px',
-                borderColor: 'rgba(59, 130, 246, 0.1)'
+                gap: '16px'
               }}>
                 <div>
                   <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '4px' }}>{bid.rfpId?.title || 'Unknown RFQ'}</h4>
@@ -339,17 +391,16 @@ const VendorHome = () => {
         )}
 
         {activeTab === 'purchase-orders' && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="slide-up-reveal">
             {purchaseOrders.length === 0 ? (
               <div className="text-center text-muted py-8">No purchase orders received yet.</div>
             ) : purchaseOrders.map((po) => (
-              <div key={po._id} className="glass-card" style={{
+              <div key={po._id} className="glass-card transition hover:border-green-400 dark:hover:border-green-500 hover:shadow-md p-4 rounded-xl" style={{
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 flexWrap: 'wrap',
-                gap: '16px',
-                borderColor: 'rgba(16, 185, 129, 0.1)'
+                gap: '16px'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                   <div style={{ padding: '12px', backgroundColor: 'rgba(16, 185, 129, 0.1)', borderRadius: '8px', color: 'var(--success)' }}>
@@ -398,7 +449,7 @@ const VendorHome = () => {
           justifyContent: 'center',
           zIndex: 1000
         }}>
-          <div className="glass-panel" style={{
+          <div className="glass-panel slide-up-reveal" style={{
             width: '100%',
             maxWidth: '520px',
             padding: '32px',
