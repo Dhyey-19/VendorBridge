@@ -33,8 +33,62 @@ export const updateCompanyProfile = async (req, res) => {
 
 export const getVendors = async (req, res) => {
   try {
+    const company = await Company.findById(req.user.companyId).populate('vendors');
+    if (!company) {
+      return res.status(404).json({ message: 'Company not found' });
+    }
+    res.json(company.vendors);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getSystemVendors = async (req, res) => {
+  try {
     const vendors = await Vendor.find({});
     res.json(vendors);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const registerVendor = async (req, res) => {
+  try {
+    const { vendorIds, vendorId } = req.body;
+    const idsToRegister = vendorIds || (vendorId ? [vendorId] : []);
+    
+    if (idsToRegister.length === 0) return res.status(400).json({ message: 'Vendor IDs are required' });
+
+    const company = await Company.findById(req.user.companyId);
+    if (!company) return res.status(404).json({ message: 'Company not found' });
+
+    // Fetch the actual vendor names to log them properly
+    const vendorsToRegister = await Vendor.find({ _id: { $in: idsToRegister } });
+
+    let added = false;
+    let addedNames = [];
+
+    vendorsToRegister.forEach(v => {
+      if (!company.vendors.includes(v._id.toString()) && !company.vendors.some(existingId => existingId.toString() === v._id.toString())) {
+        company.vendors.push(v._id);
+        addedNames.push(v.name);
+        added = true;
+      }
+    });
+
+    if (added) {
+      // Add activity
+      company.activities.push({
+        action: 'Vendor Registered',
+        details: `Registered ${addedNames.length} new vendor(s): ${addedNames.join(', ')}`,
+        user: req.user.name || 'System',
+        icon: 'Users',
+        color: 'success'
+      });
+      await company.save();
+    }
+    
+    res.status(201).json({ message: 'Vendors registered successfully' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -133,9 +187,13 @@ export const addCompanyTeamMember = async (req, res) => {
 
 export const deleteVendor = async (req, res) => {
   try {
-    const vendor = await Vendor.findByIdAndDelete(req.params.id);
-    if (!vendor) return res.status(404).json({ message: 'Vendor not found' });
-    res.json({ message: 'Vendor removed' });
+    const company = await Company.findById(req.user.companyId);
+    if (!company) return res.status(404).json({ message: 'Company not found' });
+
+    company.vendors = company.vendors.filter(id => id.toString() !== req.params.id);
+    await company.save();
+
+    res.json({ message: 'Vendor removed from company' });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -179,6 +237,19 @@ export const updateCompanyTeamMember = async (req, res) => {
       status: updatedMember.status,
       companyId: updatedMember.companyId
     });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+export const getActivities = async (req, res) => {
+  try {
+    const company = await Company.findById(req.user.companyId);
+    if (!company) return res.status(404).json({ message: 'Company not found' });
+
+    // Sort activities by time descending
+    const activities = company.activities.sort((a, b) => new Date(b.time) - new Date(a.time));
+    res.status(200).json(activities);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

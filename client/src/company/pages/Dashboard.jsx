@@ -1,34 +1,103 @@
+import { useState, useEffect } from 'react';
 import { 
   Users, 
   FileQuestion, 
   CheckSquare, 
   ShoppingCart,
   TrendingUp,
-  Clock
+  Clock,
+  History
 } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
 import './Dashboard.css';
 
 function Dashboard() {
+  const { user, token } = useAuth();
+  const [vendorsCount, setVendorsCount] = useState(0);
+
+  useEffect(() => {
+    const fetchVendorsCount = async () => {
+      try {
+        const res = await fetch('/api/companies/vendors', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setVendorsCount(data.length);
+        }
+      } catch (error) {
+        console.error('Failed to fetch vendors count:', error);
+      }
+    };
+
+    if (token) {
+      fetchVendorsCount();
+    }
+  }, [token]);
+
   const stats = [
-    { title: 'Total Vendors', value: '142', icon: Users, color: 'info' },
+    { title: 'Total Vendors', value: vendorsCount.toString(), icon: Users, color: 'info' },
     { title: 'Active RFQs', value: '28', icon: FileQuestion, color: 'warning' },
     { title: 'Pending Approvals', value: '12', icon: CheckSquare, color: 'danger' },
     { title: 'Purchase Orders', value: '85', icon: ShoppingCart, color: 'success' },
   ];
 
-  const recentActivities = [
-    { id: 1, action: 'New RFQ Created', details: 'Office Supplies Q3', time: '2 hours ago', icon: FileQuestion },
-    { id: 2, action: 'Quotation Received', details: 'TechCorp Solutions', time: '4 hours ago', icon: Users },
-    { id: 3, action: 'PO Approved', details: 'PO-2023-089', time: '1 day ago', icon: CheckSquare },
-    { id: 4, action: 'Invoice Generated', details: 'INV-0045 for PO-2023-088', time: '2 days ago', icon: ShoppingCart },
-  ];
+  const [recentActivities, setRecentActivities] = useState([]);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      try {
+        const res = await fetch('/api/companies/activities', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          const mappedData = data.slice(0, 4).map((d, index) => {
+            let IconComponent = History;
+            if (d.icon === 'Users') IconComponent = Users;
+            else if (d.icon === 'FileQuestion') IconComponent = FileQuestion;
+            else if (d.icon === 'CheckSquare') IconComponent = CheckSquare;
+            else if (d.icon === 'ShoppingCart') IconComponent = ShoppingCart;
+            
+            // Format time difference roughly
+            const diffMs = new Date() - new Date(d.time);
+            const diffMins = Math.round(diffMs / 60000);
+            const diffHours = Math.round(diffMins / 60);
+            const diffDays = Math.round(diffHours / 24);
+            
+            let timeStr = 'just now';
+            if (diffDays > 0) timeStr = `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+            else if (diffHours > 0) timeStr = `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+            else if (diffMins > 0) timeStr = `${diffMins} min${diffMins > 1 ? 's' : ''} ago`;
+
+            return {
+              id: d._id || index,
+              action: d.action,
+              details: d.details,
+              time: timeStr,
+              icon: IconComponent
+            };
+          });
+          setRecentActivities(mappedData);
+        }
+      } catch (error) {
+        console.error('Failed to fetch activities:', error);
+      }
+    };
+
+    if (token) {
+      fetchActivities();
+    }
+  }, [token]);
 
   return (
     <div className="page-container">
       <div className="page-header flex justify-between items-center mb-6">
         <div>
           <h2>Dashboard Overview</h2>
-          <p className="text-muted text-sm mt-2">Welcome back, John. Here's what's happening today.</p>
+          <p className="text-muted text-sm mt-2">Welcome back, {user?.name?.split(' ')[0] || 'User'}. Here's what's happening today.</p>
         </div>
         <button className="btn btn-primary">
           <TrendingUp size={18} />

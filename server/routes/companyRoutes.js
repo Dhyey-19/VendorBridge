@@ -7,7 +7,10 @@ import {
   updateCompanyTeamMember,
   getVendors,
   updateVendor,
-  deleteVendor
+  deleteVendor,
+  getSystemVendors,
+  registerVendor,
+  getActivities
 } from '../controllers/companyController.js';
 import { protect, authorize } from '../middleware/auth.js';
 
@@ -21,7 +24,11 @@ router.route('/profile')
   .put(updateCompanyProfile);
 
 router.route('/vendors')
-  .get(getVendors);
+  .get(getVendors)
+  .post(registerVendor);
+
+router.route('/system-vendors')
+  .get(getSystemVendors);
 
 router.route('/vendors/:id')
   .put(updateVendor)
@@ -34,5 +41,8 @@ router.route('/team')
 
 router.route('/team/:id')
   .put(authorize('admin'), updateCompanyTeamMember);
+
+router.route('/activities')
+  .get(getActivities);
 
 export default router;
