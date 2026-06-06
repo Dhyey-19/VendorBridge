@@ -1,0 +1,33 @@
+.rfq-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 1.5rem;
+}
+
+.rfq-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  background-color: var(--surface-color);
+  transition: transform var(--transition-speed), box-shadow var(--transition-speed);
+}
+
+.rfq-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+  border-color: rgba(79, 70, 229, 0.3);
+}
+
+.items-table {
+  width: 100%;
+  border: 1px solid var(--border-color);
+}
+
+.items-table th, .items-table td {
+  padding: 0.5rem;
+}
+
+.items-table input, .items-table select {
+  padding: 0.4rem;
+  margin: 0;
+}
