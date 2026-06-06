@@ -62,7 +62,7 @@ router.post('/', protect, async (req, res) => {
     } else {
      const quotation = new Quotation({
       ...req.body,
-      vendorId: vendorProfile._id
+      vendorId: vendorId
     });
     await quotation.save();
 
