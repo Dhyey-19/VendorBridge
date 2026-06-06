@@ -16,28 +16,13 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     return (
       <div style={{
         display: 'flex',
-        flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '50vh',
-        gap: '16px'
+        minHeight: '50vh'
       }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid rgba(79, 70, 229, 0.15)',
-          borderTopColor: 'var(--primary)',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite'
-        }}></div>
-        <p style={{ color: 'var(--text-secondary)', fontSize: '14px', fontWeight: 500 }}>
-          Securing authentication tunnel...
+        <p style={{ color: 'var(--text-secondary)', fontSize: '15px', fontWeight: 600 }}>
+          Loading session...
         </p>
-        <style>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
       </div>
     );
   }

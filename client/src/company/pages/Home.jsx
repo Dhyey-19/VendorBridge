@@ -132,8 +132,7 @@ const CompanyHome = () => {
           display: 'flex',
           alignItems: 'center',
           gap: '12px',
-          zIndex: 1000,
-          animation: 'fadeIn 0.2s ease-out'
+          zIndex: 1000
         }}>
           <CheckCircle size={20} style={{ color: 'var(--accent-company)' }} />
           <span style={{ fontSize: '14px', fontWeight: 600 }}>{notification}</span>
@@ -566,8 +565,7 @@ const CompanyHome = () => {
             maxWidth: '520px',
             padding: '32px',
             borderRadius: '20px',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            border: '1px solid rgba(16, 185, 129, 0.2)'
           }}>
             <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>Publish Request for Proposal (RFP)</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
@@ -648,8 +646,7 @@ const CompanyHome = () => {
             maxWidth: '520px',
             padding: '32px',
             borderRadius: '20px',
-            border: '1px solid rgba(16, 185, 129, 0.2)',
-            animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+            border: '1px solid rgba(16, 185, 129, 0.2)'
           }}>
             <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>Register Internal Staff User</h3>
             <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
