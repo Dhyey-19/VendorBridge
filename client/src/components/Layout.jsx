@@ -19,19 +19,19 @@ function Layout() {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    navigate('/login');
+    navigate('/company/auth');
   };
 
   const navItems = [
-    { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { path: '/vendors', label: 'Vendors', icon: Users },
-    { path: '/rfqs', label: 'RFQs', icon: FileQuestion },
-    { path: '/quotations', label: 'Quotations', icon: FileText },
-    { path: '/approvals', label: 'Approvals', icon: CheckSquare },
-    { path: '/purchase-orders', label: 'Purchase Orders', icon: ShoppingCart },
-    { path: '/invoices', label: 'Invoices', icon: FileSpreadsheet },
-    { path: '/logs', label: 'Activity Logs', icon: History },
-    { path: '/reports', label: 'Reports', icon: BarChart3 },
+    { path: '/company/dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { path: '/company/vendors', label: 'Vendors', icon: Users },
+    { path: '/company/rfqs', label: 'RFQs', icon: FileQuestion },
+    { path: '/company/quotations', label: 'Quotations', icon: FileText },
+    { path: '/company/approvals', label: 'Approvals', icon: CheckSquare },
+    { path: '/company/purchase-orders', label: 'Purchase Orders', icon: ShoppingCart },
+    { path: '/company/invoices', label: 'Invoices', icon: FileSpreadsheet },
+    { path: '/company/logs', label: 'Activity Logs', icon: History },
+    { path: '/company/reports', label: 'Reports', icon: BarChart3 },
   ];
 
   return (

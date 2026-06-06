@@ -5,7 +5,18 @@ import PortalLayout from './components/PortalLayout';
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
 import VendorHome from './vendor/pages/Home';
-import CompanyHome from './company/pages/Home';
+
+// New Company Pages
+import Layout from './components/Layout';
+import Dashboard from './company/pages/Dashboard';
+import Vendors from './company/pages/Vendors';
+import RFQs from './company/pages/RFQs';
+import Quotations from './company/pages/Quotations';
+import Approvals from './company/pages/Approvals';
+import PurchaseOrders from './company/pages/PurchaseOrders';
+import Invoices from './company/pages/Invoices';
+import ActivityLogs from './company/pages/ActivityLogs';
+import Reports from './company/pages/Reports';
 
 // Route Guard Component
 const ProtectedRoute = ({ children, allowedRoles }) => {
@@ -45,37 +56,46 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <PortalLayout>
-          <Routes>
-            {/* Public Entry Routes */}
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/company/auth" element={<AuthPage />} />
-            <Route path="/vendor/auth" element={<AuthPage />} />
+        <Routes>
+          {/* Public Entry Routes */}
+          <Route path="/" element={<PortalLayout><LandingPage /></PortalLayout>} />
+          <Route path="/company/auth" element={<PortalLayout><AuthPage /></PortalLayout>} />
+          <Route path="/vendor/auth" element={<PortalLayout><AuthPage /></PortalLayout>} />
 
-            {/* Protected Enterprise Portal */}
-            <Route
-              path="/company"
-              element={
-                <ProtectedRoute allowedRoles={['admin', 'manager', 'officer']}>
-                  <CompanyHome />
-                </ProtectedRoute>
-              }
-            />
+          {/* Protected Enterprise Portal */}
+          <Route
+            path="/company"
+            element={
+              <ProtectedRoute allowedRoles={['admin', 'manager', 'officer']}>
+                <Layout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/company/dashboard" replace />} />
+            <Route path="dashboard" element={<Dashboard />} />
+            <Route path="vendors" element={<Vendors />} />
+            <Route path="rfqs" element={<RFQs />} />
+            <Route path="quotations" element={<Quotations />} />
+            <Route path="approvals" element={<Approvals />} />
+            <Route path="purchase-orders" element={<PurchaseOrders />} />
+            <Route path="invoices" element={<Invoices />} />
+            <Route path="logs" element={<ActivityLogs />} />
+            <Route path="reports" element={<Reports />} />
+          </Route>
 
-            {/* Protected Vendor Portal */}
-            <Route
-              path="/vendor"
-              element={
-                <ProtectedRoute allowedRoles={['vendor']}>
-                  <VendorHome />
-                </ProtectedRoute>
-              }
-            />
+          {/* Protected Vendor Portal */}
+          <Route
+            path="/vendor"
+            element={
+              <ProtectedRoute allowedRoles={['vendor']}>
+                <PortalLayout><VendorHome /></PortalLayout>
+              </ProtectedRoute>
+            }
+          />
 
-            {/* Fallback Catch */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </PortalLayout>
+          {/* Fallback Catch */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </Router>
     </AuthProvider>
   );
