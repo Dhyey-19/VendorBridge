@@ -1,7 +1,11 @@
 import React, { useState } from 'react';
-import { Building2, Plus, DollarSign, Users, Briefcase, FileText, CheckCircle, XCircle } from 'lucide-react';
+import { useAuth } from '../../context/AuthContext';
+import { Building2, Plus, DollarSign, Users, Briefcase, FileText, CheckCircle, XCircle, ShieldCheck, UserPlus } from 'lucide-react';
 
 const CompanyHome = () => {
+  const { user } = useAuth();
+  const userRole = user?.role || 'officer'; // default to officer if not set
+
   // Mock Data & State
   const [rfps, setRfps] = useState([
     { id: 1, title: 'Enterprise Cloud Infrastructure Migration', budget: '$45,000', bidsCount: 2, status: 'Open' },
@@ -15,11 +19,36 @@ const CompanyHome = () => {
     { id: 203, rfpTitle: 'Office Hardware Supply & Setup', vendor: 'Acme Supplies', amount: '$11,800', date: '2026-06-06', status: 'Pending' }
   ]);
 
-  const [activeTab, setActiveTab] = useState('rfps');
+  // Admin Mock Database
+  const [vendors, setVendors] = useState([
+    { id: 301, name: 'Infosys Corp', category: 'IT & Cloud Services', gst: 'GSTIN88990INFO', status: 'Approved' },
+    { id: 302, name: 'Acme Supplies', category: 'Hardware Supplies', gst: 'GSTIN88209ACME', status: 'Approved' },
+    { id: 303, name: 'Gopal Logistics Services', category: 'Transportation & Logistics', gst: 'GSTIN54321VENDOR', status: 'Pending' }
+  ]);
+
+  const [staffUsers, setStaffUsers] = useState([
+    { id: 401, name: 'John Admin', email: 'admin@apex.com', role: 'admin', status: 'active' },
+    { id: 402, name: 'Sarah Approver', email: 'approver@apex.com', role: 'manager', status: 'active' },
+    { id: 403, name: 'Gopal Officer', email: 'officer@apex.com', role: 'officer', status: 'active' }
+  ]);
+
+  // Tab selections depend on role
+  // officer: 'rfps' | 'incoming-bids'
+  // manager: 'incoming-bids' | 'rfps'
+  // admin: 'vendors' | 'staff'
+  const defaultTab = userRole === 'admin' ? 'vendors' : userRole === 'manager' ? 'incoming-bids' : 'rfps';
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [rfpTitle, setRfpTitle] = useState('');
   const [rfpBudget, setRfpBudget] = useState('');
   const [rfpDesc, setRfpDesc] = useState('');
+  
+  const [isStaffModalOpen, setIsStaffModalOpen] = useState(false);
+  const [staffName, setStaffName] = useState('');
+  const [staffEmail, setStaffEmail] = useState('');
+  const [staffRoleSelect, setStaffRoleSelect] = useState('officer');
+
   const [notification, setNotification] = useState('');
 
   const handleOpenCreateModal = () => {
@@ -27,10 +56,6 @@ const CompanyHome = () => {
     setRfpTitle('');
     setRfpBudget('');
     setRfpDesc('');
-  };
-
-  const handleCloseCreateModal = () => {
-    setIsCreateModalOpen(false);
   };
 
   const handleCreateRfp = (e) => {
@@ -46,27 +71,49 @@ const CompanyHome = () => {
     };
 
     setRfps([newRfp, ...rfps]);
+    setIsCreateModalOpen(false);
     setNotification(`Successfully published new RFP: ${rfpTitle}`);
-    handleCloseCreateModal();
+    setTimeout(() => setNotification(''), 4000);
+  };
 
-    setTimeout(() => {
-      setNotification('');
-    }, 4000);
+  const handleCreateStaff = (e) => {
+    e.preventDefault();
+    if (!staffName || !staffEmail) return;
+
+    const newStaff = {
+      id: Date.now(),
+      name: staffName,
+      email: staffEmail,
+      role: staffRoleSelect,
+      status: 'active'
+    };
+
+    setStaffUsers([...staffUsers, newStaff]);
+    setIsStaffModalOpen(false);
+    setNotification(`Successfully added staff member: ${staffName}`);
+    setTimeout(() => setNotification(''), 4000);
   };
 
   const handleUpdateBidStatus = (bidId, newStatus) => {
     setReceivedBids(receivedBids.map(bid => {
-      if (bid.id === bidId) {
-        return { ...bid, status: newStatus };
-      }
+      if (bid.id === bidId) return { ...bid, status: newStatus };
       return bid;
     }));
 
     const bid = receivedBids.find(b => b.id === bidId);
-    setNotification(`Bid by ${bid.vendor} for ${newStatus === 'Accepted' ? 'Acceptance' : 'Rejection'} processed.`);
-    setTimeout(() => {
-      setNotification('');
-    }, 4000);
+    setNotification(`Bid by ${bid.vendor} has been ${newStatus}.`);
+    setTimeout(() => setNotification(''), 4000);
+  };
+
+  const handleUpdateVendorStatus = (vendorId, newStatus) => {
+    setVendors(vendors.map(v => {
+      if (v.id === vendorId) return { ...v, status: newStatus };
+      return v;
+    }));
+
+    const vendor = vendors.find(v => v.id === vendorId);
+    setNotification(`Vendor ${vendor.name} is now ${newStatus}.`);
+    setTimeout(() => setNotification(''), 4000);
   };
 
   return (
@@ -96,12 +143,27 @@ const CompanyHome = () => {
       {/* Header Profile */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h1 style={{ fontSize: '32px', fontWeight: 800 }}>Welcome Back, <span className="gradient-text-company">Global Corp</span></h1>
-          <p style={{ color: 'var(--text-secondary)' }}>Publish new RFPs, evaluate vendor proposals, and coordinate transactions.</p>
+          <h1 style={{ fontSize: '32px', fontWeight: 800 }}>
+            Welcome Back, <span className="gradient-text-company">{user?.name || 'Enterprise'}</span>
+          </h1>
+          <p style={{ color: 'var(--text-secondary)' }}>
+            {userRole === 'admin' && 'ERP Management Console: Manage verified vendors and internal staff accounts.'}
+            {userRole === 'manager' && 'Approver Portal: Evaluate quotation metrics and authorize pending bids.'}
+            {userRole === 'officer' && 'Procurement Workspace: Publish RFP scope and compare vendor bids.'}
+          </p>
         </div>
-        <button onClick={handleOpenCreateModal} className="btn btn-company" style={{ display: 'flex', gap: '8px', padding: '12px 24px' }}>
-          <Plus size={18} /> New Request (RFP)
-        </button>
+
+        {userRole === 'officer' && (
+          <button onClick={handleOpenCreateModal} className="btn btn-company" style={{ display: 'flex', gap: '8px', padding: '12px 24px' }}>
+            <Plus size={18} /> New Request (RFP)
+          </button>
+        )}
+
+        {userRole === 'admin' && (
+          <button onClick={() => setIsStaffModalOpen(true)} className="btn btn-company" style={{ display: 'flex', gap: '8px', padding: '12px 24px' }}>
+            <UserPlus size={18} /> Add Staff Account
+          </button>
+        )}
       </div>
 
       {/* Metrics Row */}
@@ -184,52 +246,96 @@ const CompanyHome = () => {
             <Users size={24} />
           </div>
           <div>
-            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Active Vendors</span>
-            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>8</h3>
+            <span style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>Approved Vendors</span>
+            <h3 style={{ fontSize: '24px', fontWeight: 800 }}>
+              {vendors.filter(v => v.status === 'Approved').length}
+            </h3>
           </div>
         </div>
       </div>
 
       {/* Main Workspace Layout */}
       <div className="glass-panel" style={{ padding: '32px', borderRadius: '20px', marginBottom: '40px' }}>
+        
+        {/* Navigation Tabs based on Role */}
         <div style={{
           display: 'flex',
           borderBottom: '1px solid var(--border-light)',
           marginBottom: '24px',
           gap: '24px'
         }}>
-          <button
-            onClick={() => setActiveTab('rfps')}
-            style={{
-              padding: '12px 8px',
-              fontWeight: 600,
-              fontSize: '15px',
-              color: activeTab === 'rfps' ? 'var(--accent-company)' : 'var(--text-secondary)',
-              borderBottom: '2px solid',
-              borderColor: activeTab === 'rfps' ? 'var(--accent-company)' : 'transparent',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            My Published RFPs ({rfps.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('incoming-bids')}
-            style={{
-              padding: '12px 8px',
-              fontWeight: 600,
-              fontSize: '15px',
-              color: activeTab === 'incoming-bids' ? 'var(--accent-company)' : 'var(--text-secondary)',
-              borderBottom: '2px solid',
-              borderColor: activeTab === 'incoming-bids' ? 'var(--accent-company)' : 'transparent',
-              cursor: 'pointer',
-              transition: 'all 0.2s'
-            }}
-          >
-            Incoming Vendor Bids ({receivedBids.length})
-          </button>
+          {userRole !== 'admin' && (
+            <>
+              <button
+                onClick={() => setActiveTab('rfps')}
+                style={{
+                  padding: '12px 8px',
+                  fontWeight: 600,
+                  fontSize: '15px',
+                  color: activeTab === 'rfps' ? 'var(--accent-company)' : 'var(--text-secondary)',
+                  borderBottom: '2px solid',
+                  borderColor: activeTab === 'rfps' ? 'var(--accent-company)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                My Published RFPs ({rfps.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('incoming-bids')}
+                style={{
+                  padding: '12px 8px',
+                  fontWeight: 600,
+                  fontSize: '15px',
+                  color: activeTab === 'incoming-bids' ? 'var(--accent-company)' : 'var(--text-secondary)',
+                  borderBottom: '2px solid',
+                  borderColor: activeTab === 'incoming-bids' ? 'var(--accent-company)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Incoming Vendor Bids ({receivedBids.length})
+              </button>
+            </>
+          )}
+
+          {userRole === 'admin' && (
+            <>
+              <button
+                onClick={() => setActiveTab('vendors')}
+                style={{
+                  padding: '12px 8px',
+                  fontWeight: 600,
+                  fontSize: '15px',
+                  color: activeTab === 'vendors' ? 'var(--accent-company)' : 'var(--text-secondary)',
+                  borderBottom: '2px solid',
+                  borderColor: activeTab === 'vendors' ? 'var(--accent-company)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Manage Vendors ({vendors.length})
+              </button>
+              <button
+                onClick={() => setActiveTab('staff')}
+                style={{
+                  padding: '12px 8px',
+                  fontWeight: 600,
+                  fontSize: '15px',
+                  color: activeTab === 'staff' ? 'var(--accent-company)' : 'var(--text-secondary)',
+                  borderBottom: '2px solid',
+                  borderColor: activeTab === 'staff' ? 'var(--accent-company)' : 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+              >
+                Manage Staff Users ({staffUsers.length})
+              </button>
+            </>
+          )}
         </div>
 
+        {/* Tab 1: Published RFPs */}
         {activeTab === 'rfps' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {rfps.map((rfp) => (
@@ -265,6 +371,7 @@ const CompanyHome = () => {
           </div>
         )}
 
+        {/* Tab 2: Incoming Vendor Bids */}
         {activeTab === 'incoming-bids' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             {receivedBids.map((bid) => (
@@ -290,22 +397,28 @@ const CompanyHome = () => {
 
                 <div>
                   {bid.status === 'Pending' ? (
-                    <div style={{ display: 'flex', gap: '8px' }}>
-                      <button
-                        onClick={() => handleUpdateBidStatus(bid.id, 'Rejected')}
-                        className="btn btn-outline"
-                        style={{ padding: '8px 12px', color: 'var(--error)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
-                      >
-                        <XCircle size={16} /> Decline
-                      </button>
-                      <button
-                        onClick={() => handleUpdateBidStatus(bid.id, 'Accepted')}
-                        className="btn btn-company"
-                        style={{ padding: '8px 12px' }}
-                      >
-                        <CheckCircle size={16} /> Accept Bid
-                      </button>
-                    </div>
+                    userRole === 'manager' ? (
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button
+                          onClick={() => handleUpdateBidStatus(bid.id, 'Rejected')}
+                          className="btn btn-outline"
+                          style={{ padding: '8px 12px', color: 'var(--error)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                        >
+                          <XCircle size={16} /> Decline
+                        </button>
+                        <button
+                          onClick={() => handleUpdateBidStatus(bid.id, 'Accepted')}
+                          className="btn btn-company"
+                          style={{ padding: '8px 12px' }}
+                        >
+                          <CheckCircle size={16} /> Accept Bid
+                        </button>
+                      </div>
+                    ) : (
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic' }}>
+                        Pending Manager Approval
+                      </span>
+                    )
                   ) : (
                     <span style={{
                       fontSize: '11px',
@@ -325,6 +438,112 @@ const CompanyHome = () => {
             ))}
           </div>
         )}
+
+        {/* Tab 3: Admin Vendor List */}
+        {activeTab === 'vendors' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {vendors.map((vendor) => (
+              <div key={vendor.id} className="glass-card" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '16px'
+              }}>
+                <div>
+                  <h4 style={{ fontSize: '18px', fontWeight: 700, marginBottom: '4px' }}>{vendor.name}</h4>
+                  <div style={{ display: 'flex', gap: '16px', fontSize: '13px', color: 'var(--text-secondary)' }}>
+                    <span>Category: <strong style={{ color: 'var(--text-primary)' }}>{vendor.category}</strong></span>
+                    <span>&bull;</span>
+                    <span>GST: <strong style={{ color: 'var(--text-primary)' }}>{vendor.gst}</strong></span>
+                  </div>
+                </div>
+
+                <div>
+                  {vendor.status === 'Pending' ? (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button
+                        onClick={() => handleUpdateVendorStatus(vendor.id, 'Rejected')}
+                        className="btn btn-outline"
+                        style={{ padding: '8px 12px', color: 'var(--error)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                      >
+                        Decline
+                      </button>
+                      <button
+                        onClick={() => handleUpdateVendorStatus(vendor.id, 'Approved')}
+                        className="btn btn-company"
+                        style={{ padding: '8px 12px' }}
+                      >
+                        Approve Vendor
+                      </button>
+                    </div>
+                  ) : (
+                    <span style={{
+                      fontSize: '11px',
+                      fontWeight: 700,
+                      textTransform: 'uppercase',
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      backgroundColor: vendor.status === 'Approved' ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid',
+                      borderColor: vendor.status === 'Approved' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                      color: vendor.status === 'Approved' ? 'var(--success)' : 'var(--error)'
+                    }}>
+                      {vendor.status}
+                    </span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tab 4: Admin Staff List */}
+        {activeTab === 'staff' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {staffUsers.map((staff) => (
+              <div key={staff.id} className="glass-card" style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '16px'
+              }}>
+                <div>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, marginBottom: '2px' }}>{staff.name}</h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{staff.email}</p>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-light)',
+                    color: 'var(--text-secondary)'
+                  }}>
+                    {staff.role}
+                  </span>
+                  <span style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    padding: '3px 8px',
+                    borderRadius: '4px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    border: '1px solid rgba(16, 185, 129, 0.2)',
+                    color: 'var(--success)'
+                  }}>
+                    {staff.status}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
       </div>
 
       {/* Create RFP Modal Overlay */}
@@ -397,7 +616,7 @@ const CompanyHome = () => {
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
-                <button type="button" onClick={handleCloseCreateModal} className="btn btn-outline" style={{ padding: '10px 20px' }}>
+                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="btn btn-outline" style={{ padding: '10px 20px' }}>
                   Cancel
                 </button>
                 <button type="submit" className="btn btn-company" style={{ padding: '10px 20px' }}>
@@ -408,6 +627,86 @@ const CompanyHome = () => {
           </div>
         </div>
       )}
+
+      {/* Add Staff Modal Overlay */}
+      {isStaffModalOpen && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          backgroundColor: 'rgba(6, 9, 17, 0.8)',
+          backdropFilter: 'blur(8px)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000
+        }}>
+          <div className="glass-panel" style={{
+            width: '100%',
+            maxWidth: '520px',
+            padding: '32px',
+            borderRadius: '20px',
+            border: '1px solid rgba(16, 185, 129, 0.2)',
+            animation: 'fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
+          }}>
+            <h3 style={{ fontSize: '22px', fontWeight: 700, marginBottom: '8px' }}>Register Internal Staff User</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '24px' }}>
+              Create an operational user account tied to your shared company profile.
+            </p>
+            
+            <form onSubmit={handleCreateStaff}>
+              <div className="form-group">
+                <label className="form-label">Full Name</label>
+                <input
+                  type="text"
+                  className="form-control"
+                  value={staffName}
+                  onChange={(e) => setStaffName(e.target.value)}
+                  placeholder="e.g. Gopal Das"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Email Address</label>
+                <input
+                  type="email"
+                  className="form-control"
+                  value={staffEmail}
+                  onChange={(e) => setStaffEmail(e.target.value)}
+                  placeholder="e.g. gopal@apex.com"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">Role Privilege</label>
+                <select
+                  className="form-control"
+                  value={staffRoleSelect}
+                  onChange={(e) => setStaffRoleSelect(e.target.value)}
+                >
+                  <option value="officer">Procurement Officer (Creates RFQs, Compares Quotes)</option>
+                  <option value="manager">Manager / Approver (Approves Bids)</option>
+                  <option value="admin">System Admin (Full Admin console privilege)</option>
+                </select>
+              </div>
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '32px' }}>
+                <button type="button" onClick={() => setIsStaffModalOpen(false)} className="btn btn-outline" style={{ padding: '10px 20px' }}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-company" style={{ padding: '10px 20px' }}>
+                  Add Member
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };
